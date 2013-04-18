@@ -1,0 +1,5 @@
+*.so
+*.dylib
+*.swp
+/zamcomp.peg
+/zamcomp.lv2/
