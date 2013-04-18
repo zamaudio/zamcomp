@@ -33,7 +33,7 @@ endif
 ifeq ($(shell pkg-config --exists lv2-gui || echo no), no)
   $(error "LV2-GUI is required ")
 else
-  LV2GUIFLAGS=`pkg-config --cflags --libs lv2-gui`
+  LV2GUIFLAGS=`pkg-config --cflags --libs lv2-gui lv2 lv2core lv2-plugin`
 endif
 
 
