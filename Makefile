@@ -44,13 +44,15 @@ $(BUNDLE): manifest.ttl zamcomp.ttl zamcomp$(LIB_EXT) zamcomp_gui$(LIB_EXT)
 
 zamcomp$(LIB_EXT): zamcomp.cpp
 	$(CXX) -o zamcomp$(LIB_EXT) \
-		$(CXXFLAGS) $(LV2FLAGS) $(LDFLAGS) \
-		zamcomp.cpp
+		$(CXXFLAGS) \
+		zamcomp.cpp \
+		$(LV2FLAGS) $(LDFLAGS)
 
 zamcomp_gui$(LIB_EXT): zamcomp_gui.cpp zamcomp.peg
 	$(CXX) -o zamcomp_gui$(LIB_EXT) \
-		$(CXXFLAGS) $(LV2GUIFLAGS) $(LDFLAGS) \
-		zamcomp_gui.cpp
+		$(CXXFLAGS) \
+		zamcomp_gui.cpp \
+		$(LV2GUIFLAGS) $(LDFLAGS)
 
 zamcomp.peg: zamcomp.ttl
 	lv2peg zamcomp.ttl zamcomp.peg
