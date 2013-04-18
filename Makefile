@@ -33,7 +33,7 @@ endif
 ifeq ($(shell pkg-config --exists lv2-gui || echo no), no)
   $(error "LV2-GUI is required ")
 else
-  LV2GUIFLAGS=`pkg-config --cflags --libs lv2-gui`
+  LV2GUIFLAGS=`pkg-config --cflags --libs lv2-gui lv2 lv2core lv2-plugin`
 endif
 
 
@@ -44,13 +44,15 @@ $(BUNDLE): manifest.ttl zamcomp.ttl zamcomp$(LIB_EXT) zamcomp_gui$(LIB_EXT)
 
 zamcomp$(LIB_EXT): zamcomp.cpp
 	$(CXX) -o zamcomp$(LIB_EXT) \
-		$(CXXFLAGS) $(LV2FLAGS) $(LDFLAGS) \
-		zamcomp.cpp
+		$(CXXFLAGS) \
+		zamcomp.cpp \
+		$(LV2FLAGS) $(LDFLAGS)
 
 zamcomp_gui$(LIB_EXT): zamcomp_gui.cpp zamcomp.peg
 	$(CXX) -o zamcomp_gui$(LIB_EXT) \
-		$(CXXFLAGS) $(LV2GUIFLAGS) $(LDFLAGS) \
-		zamcomp_gui.cpp
+		$(CXXFLAGS) \
+		zamcomp_gui.cpp \
+		$(LV2GUIFLAGS) $(LDFLAGS)
 
 zamcomp.peg: zamcomp.ttl
 	lv2peg zamcomp.ttl zamcomp.peg
