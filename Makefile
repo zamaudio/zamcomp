@@ -1,24 +1,69 @@
-BUNDLE = zamcomp.lv2
-INSTALL_DIR = /usr/lib/lv2
+#!/usr/bin/make -f
 
-$(BUNDLE): manifest.ttl zamcomp.ttl zamcomp.so zamcomp_gui.so
+PREFIX ?= /usr/local
+LIBDIR ?= lib
+LV2DIR ?= $(PREFIX)/$(LIBDIR)/lv2
+
+OPTIMIZATIONS ?= -msse -msse2 -mfpmath=sse -ffast-math -fomit-frame-pointer -O3 -fno-finite-math-only
+
+LDFLAGS ?= -Wl,--as-needed
+CXXFLAGS ?= $(OPTIMIZATIONS) -Wall
+
+###############################################################################
+BUNDLE = zamcomp.lv2
+
+CXXFLAGS += -fPIC -DPIC
+
+UNAME=$(shell uname)
+ifeq ($(UNAME),Darwin)
+  LIB_EXT=.dylib
+  LDFLAGS += -dynamiclib
+else
+  LDFLAGS += -shared -Wl,-Bstatic -Wl,-Bdynamic
+  LIB_EXT=.so
+endif
+
+
+ifeq ($(shell pkg-config --exists lv2 lv2core lv2-plugin || echo no), no)
+  $(error "LV2 SDK was not found")
+else
+  LV2FLAGS=`pkg-config --cflags --libs lv2 lv2core lv2-plugin`
+endif
+
+ifeq ($(shell pkg-config --exists lv2-gui || echo no), no)
+  $(error "LV2-GUI is required ")
+else
+  LV2GUIFLAGS=`pkg-config --cflags --libs lv2-gui`
+endif
+
+
+$(BUNDLE): manifest.ttl zamcomp.ttl zamcomp$(LIB_EXT) zamcomp_gui$(LIB_EXT)
 	rm -rf $(BUNDLE)
 	mkdir $(BUNDLE)
-	cp manifest.ttl zamcomp.ttl zamcomp.so $(BUNDLE)
+	cp manifest.ttl zamcomp.ttl zamcomp$(LIB_EXT) $(BUNDLE)
 
-zamcomp.so: zamcomp.cpp
-	g++ -shared -fPIC -DPIC zamcomp.cpp `pkg-config --cflags --libs lv2-plugin` -o zamcomp.so
+zamcomp$(LIB_EXT): zamcomp.cpp
+	$(CXX) -o zamcomp$(LIB_EXT) \
+		$(CXXFLAGS) $(LV2FLAGS) $(LDFLAGS) \
+		zamcomp.cpp
 
-zamcomp_gui.so: zamcomp_gui.cpp zamcomp.peg
-	g++ -shared -fPIC -DPIC zamcomp_gui.cpp `pkg-config --cflags --libs lv2-gui` -o zamcomp_gui.so
+zamcomp_gui$(LIB_EXT): zamcomp_gui.cpp zamcomp.peg
+	$(CXX) -o zamcomp_gui$(LIB_EXT) \
+		$(CXXFLAGS) $(LV2GUIFLAGS) $(LDFLAGS) \
+		zamcomp_gui.cpp
 
 zamcomp.peg: zamcomp.ttl
 	lv2peg zamcomp.ttl zamcomp.peg
 
 install: $(BUNDLE)
-	mkdir -p $(INSTALL_DIR)
-	rm -rf $(INSTALL_DIR)/$(BUNDLE)
-	cp -R $(BUNDLE) $(INSTALL_DIR)
+	install -d $(DESTDIR)$(LV2DIR)/$(BUNDLE)
+	install -t $(DESTDIR)$(LV2DIR)/$(BUNDLE) $(BUNDLE)/*
+	install zamcomp_gui$(LIB_EXT) $(DESTDIR)$(LV2DIR)/$(BUNDLE)
+
+uninstall:
+	rm -rf $(DESTDIR)$(LV2DIR)/$(BUNDLE)
 
 clean:
-	rm -rf $(BUNDLE) zamcomp.so zamcomp_gui.so zamcomp.peg
+	rm -rf $(BUNDLE) zamcomp$(LIB_EXT) zamcomp_gui$(LIB_EXT) zamcomp.peg
+
+.PHONY: clean install uninstall
