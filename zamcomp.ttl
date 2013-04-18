@@ -1,13 +1,7 @@
 @prefix lv2:  <http://lv2plug.in/ns/lv2core#>.
 @prefix foaf: <http://xmlns.com/foaf/0.1/>.
 @prefix doap: <http://usefulinc.com/ns/doap#>.
-@prefix guiext: <http://lv2plug.in/ns/extensions/ui#>.
 @prefix ll: <http://ll-plugins.nongnu.org/lv2/namespace#>.
-
-<http://zamaudio.com/lv2/zamcomp/gui>
-  a guiext:GtkUI;
-  guiext:binary <zamcomp_gui.so>;
-  guiext:requiredFeature guiext:makeResident.
 
 <http://zamaudio.com/lv2/zamcomp>
   a lv2:Plugin;
@@ -22,7 +16,6 @@
   ];
   doap:license <http://usefulinc.com/doap/licenses/gpl>;
   ll:pegName "p";
-  guiext:ui <http://zamaudio.com/lv2/zamcomp/gui>;
 
   lv2:port [
     a lv2:ControlPort, lv2:InputPort;

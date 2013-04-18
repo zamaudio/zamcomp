@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-PREFIX ?= /usr/local
+PREFIX ?= /usr
 LIBDIR ?= lib
 LV2DIR ?= $(PREFIX)/$(LIBDIR)/lv2
 
@@ -37,7 +37,8 @@ else
 endif
 
 
-$(BUNDLE): manifest.ttl zamcomp.ttl zamcomp$(LIB_EXT) zamcomp_gui$(LIB_EXT)
+$(BUNDLE): manifest.ttl zamcomp.ttl zamcomp$(LIB_EXT)
+#zamcomp_gui$(LIB_EXT)
 	rm -rf $(BUNDLE)
 	mkdir $(BUNDLE)
 	cp manifest.ttl zamcomp.ttl zamcomp$(LIB_EXT) $(BUNDLE)
@@ -48,11 +49,11 @@ zamcomp$(LIB_EXT): zamcomp.cpp
 		zamcomp.cpp \
 		$(LV2FLAGS) $(LDFLAGS)
 
-zamcomp_gui$(LIB_EXT): zamcomp_gui.cpp zamcomp.peg
-	$(CXX) -o zamcomp_gui$(LIB_EXT) \
-		$(CXXFLAGS) \
-		zamcomp_gui.cpp \
-		$(LV2GUIFLAGS) $(LDFLAGS)
+#zamcomp_gui$(LIB_EXT): zamcomp_gui.cpp zamcomp.peg
+#	$(CXX) -o zamcomp_gui$(LIB_EXT) \
+#		$(CXXFLAGS) \
+#		zamcomp_gui.cpp \
+#		$(LV2GUIFLAGS) $(LDFLAGS)
 
 zamcomp.peg: zamcomp.ttl
 	lv2peg zamcomp.ttl zamcomp.peg
@@ -60,7 +61,7 @@ zamcomp.peg: zamcomp.ttl
 install: $(BUNDLE)
 	install -d $(DESTDIR)$(LV2DIR)/$(BUNDLE)
 	install -t $(DESTDIR)$(LV2DIR)/$(BUNDLE) $(BUNDLE)/*
-	install zamcomp_gui$(LIB_EXT) $(DESTDIR)$(LV2DIR)/$(BUNDLE)
+#	install zamcomp_gui$(LIB_EXT) $(DESTDIR)$(LV2DIR)/$(BUNDLE)
 
 uninstall:
 	rm -rf $(DESTDIR)$(LV2DIR)/$(BUNDLE)
