@@ -84,9 +84,13 @@ public:
 
     cdb = -yl;
     gain = exp(cdb/20.f*log(10.f));
-  
+    
+    //gain reduction
+    *p(8) = yl;
+
     p(7)[i] = p(6)[i];
     p(7)[i] *= gain * makeup;
+    
     //meter_out = (fabs(p(7)[i]));
     //meter_comp = gain;
     //detected = (exp(yg/20.f*log(10.f))+old_detected)/2.f;
