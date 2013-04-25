@@ -143,6 +143,7 @@ run(LV2_Handle instance, uint32_t n_samples)
   float* const gainr =  zamcomp->gainr;
   
   float width=(knee-0.99f)*6.f;
+  float cdb=0.f;
   float attack_coeff = exp(-1000.f/(attack * zamcomp->srate));
   float release_coeff = exp(-1000.f/(release * zamcomp->srate));
   float thresdb= to_dB(threshold);
@@ -157,7 +158,7 @@ run(LV2_Handle instance, uint32_t n_samples)
     
     
     if (2.f*(xg-thresdb)<-width) {
-      yg = xg;  
+      yg = xg;
     } else if (2.f*fabs(xg-thresdb)<=width) {
       yg = xg + (1.f/ratio-1.f)*(xg-thresdb+width/2.f)*(xg-thresdb+width/2.f)/(2.f*width);
     } else if (2.f*(xg-thresdb)>width) {
@@ -175,7 +176,8 @@ run(LV2_Handle instance, uint32_t n_samples)
     sanitize_denormal(y1);
     sanitize_denormal(yl);
     
-    gain = from_dB(-yl);
+    cdb = -yl;
+    gain = from_dB(cdb);
     
     *gainr = yl;
     
