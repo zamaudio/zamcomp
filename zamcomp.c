@@ -1,10 +1,10 @@
 #include <math.h>
-#include <algorithm>
+//#include <algorithm>
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
-#include <cmath>
+//#include <stdio.h>
+//#include <string.h>
+//#include <stdint.h>
+//#include <cmath>
 
 #include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 
@@ -174,7 +174,7 @@ run(LV2_Handle instance, uint32_t n_samples)
 	    sanitize_denormal(zamcomp->old_y1);
 	    sanitize_denormal(zamcomp->old_yl);
 	    
-	    y1 = std::max(xl, release_coeff * zamcomp->old_y1+(1.f-release_coeff)*xl);
+	    y1 = fmaxf(xl, release_coeff * zamcomp->old_y1+(1.f-release_coeff)*xl);
 	    yl = attack_coeff * zamcomp->old_yl+(1.f-attack_coeff)*y1;
 	    sanitize_denormal(y1);
 	    sanitize_denormal(yl);
