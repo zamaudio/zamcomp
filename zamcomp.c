@@ -11,7 +11,6 @@
 #define ZAMCOMP_URI "http://zamaudio.com/lv2/zamcomp"
 
 
-//define ports
 typedef enum {
 	ZAMCOMP_INPUT = 0,
 	ZAMCOMP_OUTPUT = 1,
@@ -27,7 +26,6 @@ typedef enum {
 } PortIndex;
 
 
-//define variables
 typedef struct {
 	float* input;
 	float* output;
@@ -46,7 +44,6 @@ typedef struct {
 
 } ZamCOMP;
 
-//initialize variables and allocate space
 static LV2_Handle
 instantiate(const LV2_Descriptor* descriptor,
             double rate,
@@ -56,13 +53,11 @@ instantiate(const LV2_Descriptor* descriptor,
 	ZamCOMP* zamcomp = (ZamCOMP*)malloc(sizeof(ZamCOMP));
 	zamcomp->srate = rate;
 
-	zamcomp->old_yl=0.f;
-	zamcomp->old_y1=0.f;
+	zamcomp->old_yl=zamcomp->old_y1=0.f;
 
 	return (LV2_Handle)zamcomp;
 }
 
-//port connection
 static void
 connect_port(LV2_Handle instance,
              uint32_t port,
@@ -102,8 +97,6 @@ connect_port(LV2_Handle instance,
 
 }
 
-//SOME UTILS --------------------------------
-
 // Works on little-endian machines only
 static inline bool
 is_nan(float& value ) {
@@ -131,14 +124,12 @@ to_dB(float g) {
         return (20.f*log10(g));
 }
 
-//SOME UTILS --------------------------------
 
 static void
 activate(LV2_Handle instance)
 {
 }
 
-//run function
 static void
 run(LV2_Handle instance, uint32_t n_samples)
 {
@@ -155,12 +146,9 @@ run(LV2_Handle instance, uint32_t n_samples)
 	float makeup = from_dB(*(zamcomp->makeup));
 	float* const gainr =  zamcomp->gainr;
 	
-	float srate = zamcomp->srate;
-	
 	float width=(knee-0.99f)*6.f;
-	float cdb=0.f;
-	float attack_coeff = exp(-1000.f/(attack * srate));
-	float release_coeff = exp(-1000.f/(release * srate));
+	float attack_coeff = exp(-1000.f/(attack * zamcomp->srate));
+	float release_coeff = exp(-1000.f/(release * zamcomp->srate));
 	float thresdb= to_dB(threshold);
 
 	float gain = 1.f;
@@ -191,10 +179,8 @@ run(LV2_Handle instance, uint32_t n_samples)
 	    sanitize_denormal(y1);
 	    sanitize_denormal(yl);
 
-	    cdb = -yl;
-	    gain = from_dB(cdb);
+	    gain = from_dB(-yl);
 	    
-	    //gain reduction
 	    *gainr = yl;
 
 	    output[i] = input[i];
