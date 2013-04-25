@@ -1,10 +1,5 @@
 #include <math.h>
-//#include <algorithm>
 #include <stdlib.h>
-//#include <stdio.h>
-//#include <string.h>
-//#include <stdint.h>
-//#include <cmath>
 
 #include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 

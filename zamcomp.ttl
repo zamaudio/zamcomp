@@ -17,6 +17,7 @@
      foaf:mbox <mailto:damien@zamaudio.com>;
   ];
   doap:license <http://usefulinc.com/doap/licenses/gpl>;
+  lv2:optionalFeature lv2:hardRTCapable ;
   
   lv2:port [
     a lv2:AudioPort, lv2:InputPort;
