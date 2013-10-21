@@ -19,6 +19,8 @@
 		];
 	doap:license <http://usefulinc.com/doap/licenses/gpl>;
 	lv2:optionalFeature lv2:hardRTCapable ;
+	lv2:minorVersion 2 ;
+	lv2:microVersion 1 ;
   
 lv2:port [
 	a lv2:AudioPort, lv2:InputPort;
