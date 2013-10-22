@@ -1,7 +1,7 @@
-zamcomp
-=======
+zamcompx2
+=========
 
-ZamComp - LV2 compressor plugin
+ZamCompX2 - LV2 compressor plugin: stereo version of ZamComp
 
 lv2core is required to compile this LV2 plugin
 

@@ -6,12 +6,12 @@
 @prefix pg: <http://lv2plug.in/ns/ext/port-groups#>.
 @prefix ue: <http://lv2plug.in/ns/extensions/units#>.
 
-<http://zamaudio.com/lv2/zamcomp>
+<http://zamaudio.com/lv2/zamcompx2>
 	a lv2:Plugin;
 	a lv2:CompressorPlugin;
 
-	lv2:binary <zamcomp.so>;
-	doap:name "ZamComp";
+	lv2:binary <zamcompx2.so>;
+	doap:name "ZamCompX2";
 	doap:maintainer [
 		foaf:name "Damien Zammit";
 		foaf:homepage <http://zamaudio.com>;

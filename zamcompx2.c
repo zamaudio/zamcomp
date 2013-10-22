@@ -3,7 +3,7 @@
 
 #include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 
-#define ZAMCOMP_URI "http://zamaudio.com/lv2/zamcomp"
+#define ZAMCOMPX2_URI "http://zamaudio.com/lv2/zamcompx2"
 
 
 typedef enum {
@@ -209,7 +209,7 @@ extension_data(const char* uri)
 }
 
 static const LV2_Descriptor descriptor = {
-	ZAMCOMP_URI,
+	ZAMCOMPX2_URI,
 	instantiate,
 	connect_port,
 	activate,

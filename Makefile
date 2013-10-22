@@ -11,7 +11,7 @@ CXXFLAGS ?= $(OPTIMIZATIONS) -Wall
 CFLAGS ?= $(OPTIMIZATIONS) -Wall
 
 ###############################################################################
-BUNDLE = zamcomp.lv2
+BUNDLE = zamcompx2.lv2
 
 CXXFLAGS += -fPIC -DPIC
 CFLAGS += -fPIC -DPIC
@@ -39,19 +39,19 @@ else
 endif
 
 
-$(BUNDLE): manifest.ttl zamcomp.ttl zamcomp$(LIB_EXT)
+$(BUNDLE): manifest.ttl zamcompx2.ttl zamcompx2$(LIB_EXT)
 	rm -rf $(BUNDLE)
 	mkdir $(BUNDLE)
-	cp manifest.ttl zamcomp.ttl zamcomp$(LIB_EXT) $(BUNDLE)
+	cp manifest.ttl zamcompx2.ttl zamcompx2$(LIB_EXT) $(BUNDLE)
 
-zamcomp$(LIB_EXT): zamcomp.c
-	$(CXX) -o zamcomp$(LIB_EXT) \
+zamcompx2$(LIB_EXT): zamcompx2.c
+	$(CXX) -o zamcompx2$(LIB_EXT) \
 		$(CXXFLAGS) \
-		zamcomp.c \
+		zamcompx2.c \
 		$(LV2FLAGS) $(LDFLAGS)
 
-zamcomp.peg: zamcomp.ttl
-	lv2peg zamcomp.ttl zamcomp.peg
+zamcompx2.peg: zamcompx2.ttl
+	lv2peg zamcompx2.ttl zamcomp.peg
 
 install: $(BUNDLE)
 	install -d $(DESTDIR)$(LV2DIR)/$(BUNDLE)
@@ -61,6 +61,6 @@ uninstall:
 	rm -rf $(DESTDIR)$(LV2DIR)/$(BUNDLE)
 
 clean:
-	rm -rf $(BUNDLE) zamcomp$(LIB_EXT) zamcomp_gui$(LIB_EXT) zamcomp.peg
+	rm -rf $(BUNDLE) zamcompx2$(LIB_EXT) zamcompx2_gui$(LIB_EXT) zamcompx2.peg
 
 .PHONY: clean install uninstall
