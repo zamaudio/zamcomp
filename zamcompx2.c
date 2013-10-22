@@ -5,6 +5,10 @@
 
 #define ZAMCOMPX2_URI "http://zamaudio.com/lv2/zamcompx2"
 
+#define STEREOLINK_UNCOUPLED 0
+#define STEREOLINK_AVERAGE 1
+#define STEREOLINK_MAX 2
+
 
 typedef enum {
 	ZAMCOMP_INPUT_L = 0,
@@ -20,7 +24,9 @@ typedef enum {
 	ZAMCOMP_MAKEUP = 9,
 	
 	ZAMCOMP_GAINR_L = 10,
-	ZAMCOMP_GAINR_R = 11
+	ZAMCOMP_GAINR_R = 11,
+
+	ZAMCOMP_STEREOLINK = 12
 } PortIndex;
 
 
@@ -39,11 +45,15 @@ typedef struct {
 
 	float* gainr_l;
 	float* gainr_r;
- 
+
+	float* stereolink;
+
 	float srate;
-	float old_yl; 
-	float old_y1;
-  
+	float oldL_yl;
+	float oldR_yl;
+	float oldL_y1;
+	float oldR_y1;
+ 
 } ZamCOMP;
 
 static LV2_Handle
@@ -55,7 +65,8 @@ instantiate(const LV2_Descriptor* descriptor,
 	ZamCOMP* zamcomp = (ZamCOMP*)malloc(sizeof(ZamCOMP));
 	zamcomp->srate = rate;
   
-	zamcomp->old_yl=zamcomp->old_y1=0.f;
+	zamcomp->oldL_yl=zamcomp->oldL_y1=0.f;
+	zamcomp->oldR_yl=zamcomp->oldR_y1=0.f;
   
 	return (LV2_Handle)zamcomp;
 }
@@ -103,6 +114,9 @@ connect_port(LV2_Handle instance,
 	break;
 	case ZAMCOMP_GAINR_R:
 		zamcomp->gainr_r = (float*)data;
+	break;
+	case ZAMCOMP_STEREOLINK:
+		zamcomp->stereolink = (float*)data;
 	break;
 	}
   
@@ -160,17 +174,19 @@ run(LV2_Handle instance, uint32_t n_samples)
 	float makeup = from_dB(*(zamcomp->makeup));
 	float* const gainr_l =  zamcomp->gainr_l;
 	float* const gainr_r =  zamcomp->gainr_r;
- 
+	int stereolink = (*(zamcomp->stereolink) > 1.f) ? STEREOLINK_MAX : (*(zamcomp->stereolink) > 0.f) ? STEREOLINK_AVERAGE : STEREOLINK_UNCOUPLED;
 	float width=(knee-0.99f)*6.f;
 	float cdb=0.f;
 	float attack_coeff = exp(-1000.f/(attack * zamcomp->srate));
 	float release_coeff = exp(-1000.f/(release * zamcomp->srate));
 	float thresdb= to_dB(threshold);
  
-	float gain = 1.f;
+	float Lgain = 1.f;
+	float Rgain = 1.f;
 	float Lxg, Lyg;
 	float Rxg, Ryg;
-	float xl, yl, y1;
+	float Lxl, Lyl, Ly1;
+	float Rxl, Ryl, Ry1;
  
 	for (uint32_t i = 0; i < n_samples; ++i) {
 		Lyg = Ryg = 0.f;
@@ -200,28 +216,51 @@ run(LV2_Handle instance, uint32_t n_samples)
     
 		sanitize_denormal(Ryg);
 
-		xl = (Lxg - Lyg + Rxg - Ryg) / 2.f;
-		sanitize_denormal(zamcomp->old_y1);
-		sanitize_denormal(zamcomp->old_yl);
-    
-		y1 = fmaxf(xl, release_coeff * zamcomp->old_y1+(1.f-release_coeff)*xl);
-		yl = attack_coeff * zamcomp->old_yl+(1.f-attack_coeff)*y1;
-		sanitize_denormal(y1);
-		sanitize_denormal(yl);
-    
-		cdb = -yl;
-		gain = from_dB(cdb);
+		if (stereolink == STEREOLINK_UNCOUPLED) {
+			Lxl = Lxg - Lyg;
+			Rxl = Rxg - Ryg;
+		} else if (stereolink == STEREOLINK_MAX) {
+			Lxl = Rxl = fmaxf(Lxg - Lyg, Rxg - Ryg);
+		} else {
+			Lxl = Rxl = (Lxg - Lyg + Rxg - Ryg) / 2.f;
+		}
 
-		*gainr_l = yl;
-    		*gainr_r = yl;
+		sanitize_denormal(zamcomp->oldL_y1);
+		sanitize_denormal(zamcomp->oldR_y1);
+		sanitize_denormal(zamcomp->oldL_yl);
+		sanitize_denormal(zamcomp->oldR_yl);
+
+
+		Ly1 = fmaxf(Lxl, release_coeff * zamcomp->oldL_y1+(1.f-release_coeff)*Lxl);
+		Lyl = attack_coeff * zamcomp->oldL_yl+(1.f-attack_coeff)*Ly1;
+		sanitize_denormal(Ly1);
+		sanitize_denormal(Lyl);
+    
+		cdb = -Lyl;
+		Lgain = from_dB(cdb);
+
+		*gainr_l = Lyl;
+
+
+		Ry1 = fmaxf(Rxl, release_coeff * zamcomp->oldR_y1+(1.f-release_coeff)*Rxl);
+		Ryl = attack_coeff * zamcomp->oldR_yl+(1.f-attack_coeff)*Ry1;
+		sanitize_denormal(Ry1);
+		sanitize_denormal(Ryl);
+    
+		cdb = -Ryl;
+		Rgain = from_dB(cdb);
+
+		*gainr_r = Ryl;
 
 		output_l[i] = input_l[i];
-		output_l[i] *= gain * makeup;
+		output_l[i] *= Lgain * makeup;
 		output_r[i] = input_r[i];
-		output_r[i] *= gain * makeup;
+		output_r[i] *= Rgain * makeup;
     
-		zamcomp->old_yl = yl; 
-		zamcomp->old_y1 = y1;
+		zamcomp->oldL_yl = Lyl;
+		zamcomp->oldR_yl = Ryl;
+		zamcomp->oldL_y1 = Ly1;
+		zamcomp->oldR_y1 = Ry1;
 		}
 }
 
