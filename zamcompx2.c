@@ -7,23 +7,28 @@
 
 
 typedef enum {
-	ZAMCOMP_INPUT = 0,
-	ZAMCOMP_OUTPUT = 1,
+	ZAMCOMP_INPUT_L = 0,
+	ZAMCOMP_INPUT_R = 1,
+	ZAMCOMP_OUTPUT_L = 2,
+	ZAMCOMP_OUTPUT_R = 3,
 
-	ZAMCOMP_ATTACK = 2,
-	ZAMCOMP_RELEASE = 3,
-	ZAMCOMP_KNEE = 4,
-	ZAMCOMP_RATIO = 5,
-	ZAMCOMP_THRESHOLD = 6,
-	ZAMCOMP_MAKEUP = 7,
-  
-	ZAMCOMP_GAINR = 8
+	ZAMCOMP_ATTACK = 4,
+	ZAMCOMP_RELEASE = 5,
+	ZAMCOMP_KNEE = 6,
+	ZAMCOMP_RATIO = 7,
+	ZAMCOMP_THRESHOLD = 8,
+	ZAMCOMP_MAKEUP = 9,
+	
+	ZAMCOMP_GAINR_L = 10,
+	ZAMCOMP_GAINR_R = 11
 } PortIndex;
 
 
 typedef struct {
-	float* input;
-	float* output;
+	float* input_l;
+	float* input_r;
+	float* output_l;
+	float* output_r;
   
 	float* attack;
 	float* release;
@@ -31,7 +36,9 @@ typedef struct {
 	float* ratio;
 	float* threshold;
 	float* makeup;
-	float* gainr;
+
+	float* gainr_l;
+	float* gainr_r;
  
 	float srate;
 	float old_yl; 
@@ -61,11 +68,17 @@ connect_port(LV2_Handle instance,
 	ZamCOMP* zamcomp = (ZamCOMP*)instance;
   
 	switch ((PortIndex)port) {
-	case ZAMCOMP_INPUT:
-		zamcomp->input = (float*)data;
+	case ZAMCOMP_INPUT_L:
+		zamcomp->input_l = (float*)data;
   	break;
-	case ZAMCOMP_OUTPUT:
-		zamcomp->output = (float*)data;
+	case ZAMCOMP_INPUT_R:
+		zamcomp->input_r = (float*)data;
+  	break;
+	case ZAMCOMP_OUTPUT_L:
+		zamcomp->output_l = (float*)data;
+  	break;
+	case ZAMCOMP_OUTPUT_R:
+		zamcomp->output_r = (float*)data;
   	break;
 	case ZAMCOMP_ATTACK:
 		zamcomp->attack = (float*)data;
@@ -85,8 +98,11 @@ connect_port(LV2_Handle instance,
 	case ZAMCOMP_MAKEUP:
 		zamcomp->makeup = (float*)data;
 	break;
-	case ZAMCOMP_GAINR:
-	zamcomp->gainr = (float*)data;
+	case ZAMCOMP_GAINR_L:
+		zamcomp->gainr_l = (float*)data;
+	break;
+	case ZAMCOMP_GAINR_R:
+		zamcomp->gainr_r = (float*)data;
 	break;
 	}
   
@@ -131,8 +147,10 @@ run(LV2_Handle instance, uint32_t n_samples)
 {
 	ZamCOMP* zamcomp = (ZamCOMP*)instance;
   
-	const float* const input = zamcomp->input;
-	float* const output = zamcomp->output;
+	const float* const input_l = zamcomp->input_l;
+	const float* const input_r = zamcomp->input_r;
+	float* const output_l = zamcomp->output_l;
+	float* const output_r = zamcomp->output_r;
   
 	float attack = *(zamcomp->attack);
 	float release = *(zamcomp->release);
@@ -140,7 +158,8 @@ run(LV2_Handle instance, uint32_t n_samples)
 	float ratio = *(zamcomp->ratio);
 	float threshold = from_dB(*(zamcomp->threshold));
 	float makeup = from_dB(*(zamcomp->makeup));
-	float* const gainr =  zamcomp->gainr;
+	float* const gainr_l =  zamcomp->gainr_l;
+	float* const gainr_r =  zamcomp->gainr_r;
  
 	float width=(knee-0.99f)*6.f;
 	float cdb=0.f;
@@ -149,25 +168,39 @@ run(LV2_Handle instance, uint32_t n_samples)
 	float thresdb= to_dB(threshold);
  
 	float gain = 1.f;
-	float xg, xl, yg, yl, y1;
+	float Lxg, Lyg;
+	float Rxg, Ryg;
+	float xl, yl, y1;
  
 	for (uint32_t i = 0; i < n_samples; ++i) {
-		yg=0.f;
-		xg = (input[i]==0.f) ? -160.f : to_dB(fabs(input[i]));
-		sanitize_denormal(xg);
+		Lyg = Ryg = 0.f;
+		Lxg = (input_l[i]==0.f) ? -160.f : to_dB(fabs(input_l[i]));
+		Rxg = (input_r[i]==0.f) ? -160.f : to_dB(fabs(input_r[i]));
+		sanitize_denormal(Lxg);
+		sanitize_denormal(Rxg);
     
     
-		if (2.f*(xg-thresdb)<-width) {
-			yg = xg;
-		} else if (2.f*fabs(xg-thresdb)<=width) {
-			yg = xg + (1.f/ratio-1.f)*(xg-thresdb+width/2.f)*(xg-thresdb+width/2.f)/(2.f*width);
-		} else if (2.f*(xg-thresdb)>width) {
-			yg = thresdb + (xg-thresdb)/ratio;
+		if (2.f*(Lxg-thresdb)<-width) {
+			Lyg = Lxg;
+		} else if (2.f*fabs(Lxg-thresdb)<=width) {
+			Lyg = Lxg + (1.f/ratio-1.f)*(Lxg-thresdb+width/2.f)*(Lxg-thresdb+width/2.f)/(2.f*width);
+		} else if (2.f*(Lxg-thresdb)>width) {
+			Lyg = thresdb + (Lxg-thresdb)/ratio;
 		}
     
-		sanitize_denormal(yg);
+		sanitize_denormal(Lyg);
     
-		xl = xg - yg;
+		if (2.f*(Rxg-thresdb)<-width) {
+			Ryg = Rxg;
+		} else if (2.f*fabs(Rxg-thresdb)<=width) {
+			Ryg = Rxg + (1.f/ratio-1.f)*(Rxg-thresdb+width/2.f)*(Rxg-thresdb+width/2.f)/(2.f*width);
+		} else if (2.f*(Rxg-thresdb)>width) {
+			Ryg = thresdb + (Rxg-thresdb)/ratio;
+		}
+    
+		sanitize_denormal(Ryg);
+
+		xl = (Lxg - Lyg + Rxg - Ryg) / 2.f;
 		sanitize_denormal(zamcomp->old_y1);
 		sanitize_denormal(zamcomp->old_yl);
     
@@ -179,15 +212,17 @@ run(LV2_Handle instance, uint32_t n_samples)
 		cdb = -yl;
 		gain = from_dB(cdb);
 
-		*gainr = yl;
-    
-		output[i] = input[i];
-		output[i] *= gain * makeup;
+		*gainr_l = yl;
+    		*gainr_r = yl;
+
+		output_l[i] = input_l[i];
+		output_l[i] *= gain * makeup;
+		output_r[i] = input_r[i];
+		output_r[i] *= gain * makeup;
     
 		zamcomp->old_yl = yl; 
 		zamcomp->old_y1 = y1;
 		}
-  
 }
 
 

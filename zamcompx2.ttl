@@ -25,20 +25,34 @@
 lv2:port [
 	a lv2:AudioPort, lv2:InputPort;
 	lv2:index 0;
-	lv2:symbol "input";
-	lv2:name "Input";
+	lv2:symbol "input_l";
+	lv2:name "Input L";
+	],
+
+	[
+	a lv2:AudioPort, lv2:InputPort;
+	lv2:index 1;
+	lv2:symbol "input_r";
+	lv2:name "Input R";
 	],
 
 	[
 	a lv2:AudioPort, lv2:OutputPort;
-	lv2:index 1;
-	lv2:symbol "output";
-	lv2:name "Output";
+	lv2:index 2;
+	lv2:symbol "output_l";
+	lv2:name "Output L";
+	],
+
+	[
+	a lv2:AudioPort, lv2:OutputPort;
+	lv2:index 3;
+	lv2:symbol "output_r";
+	lv2:name "Output R";
 	],
 
 	[
 	a lv2:ControlPort, lv2:InputPort ;
-	lv2:index 2;
+	lv2:index 4;
 	lv2:symbol "attack";
 	lv2:name "Attack (ms)";
 	lv2:minimum 0.25 ;
@@ -49,7 +63,7 @@ lv2:port [
 
 	[
 	a lv2:ControlPort, lv2:InputPort ;
-	lv2:index 3;
+	lv2:index 5;
 	lv2:symbol "release";
 	lv2:name "Release (ms)";
 	lv2:minimum 2.0 ;
@@ -60,7 +74,7 @@ lv2:port [
 
 	[
 	a lv2:ControlPort, lv2:InputPort ;
-	lv2:index 4;
+	lv2:index 6;
 	lv2:symbol "knee";
 	lv2:name "Knee (dB)";
 	lv2:minimum 0.0 ;
@@ -71,7 +85,7 @@ lv2:port [
 	
 	[
 	a lv2:ControlPort, lv2:InputPort ;
-	lv2:index 5;
+	lv2:index 7;
 	lv2:symbol "ratio";
 	lv2:name "Ratio (dB)";
 	lv2:minimum 1.0 ;
@@ -82,7 +96,7 @@ lv2:port [
 	
 	[
 	a lv2:ControlPort, lv2:InputPort ;
-	lv2:index 6;
+	lv2:index 8;
 	lv2:symbol "threshold";
 	lv2:name "Threshold (dB)";
 	lv2:minimum -60.0 ;
@@ -93,7 +107,7 @@ lv2:port [
 	
 	[
 	a lv2:ControlPort, lv2:InputPort ;
-	lv2:index 7;
+	lv2:index 9;
 	lv2:symbol "makeup";
 	lv2:name "Makeup Gain (dB)";
 	lv2:minimum 0.0 ;
@@ -104,12 +118,26 @@ lv2:port [
 
 	[
 	a lv2:ControlPort, lv2:OutputPort;
-	lv2:index 8;
-	lv2:symbol "gain_reduction";
-	lv2:name "Gain Reduction (dB)";
+	lv2:index 10;
+	lv2:symbol "gain_reduction_l";
+	lv2:name "Gain Reduction L (dB)";
 	lv2:minimum 0.0 ;
 	lv2:maximum 12.0 ;
 	lv2:default 0.0 ;
-	ue:unit ue:db;
-	lv2:scalePoint ;
+	lv2:scalePoint [ rdfs:label "0"; rdf:value 0 ] ;
+	lv2:scalePoint [ rdfs:label "6"; rdf:value 6 ] ;
+	lv2:scalePoint [ rdfs:label "12"; rdf:value 12 ] ;
+	],
+
+	[
+	a lv2:ControlPort, lv2:OutputPort;
+	lv2:index 11;
+	lv2:symbol "gain_reduction_r";
+	lv2:name "Gain Reduction R (dB)";
+	lv2:minimum 0.0 ;
+	lv2:maximum 12.0 ;
+	lv2:default 0.0 ;
+	lv2:scalePoint [ rdfs:label "0"; rdf:value 0 ] ;
+	lv2:scalePoint [ rdfs:label "6"; rdf:value 6 ] ;
+	lv2:scalePoint [ rdfs:label "12"; rdf:value 12 ] ;
 	].
