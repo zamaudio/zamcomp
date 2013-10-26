@@ -26,16 +26,16 @@ else
 endif
 
 
-ifeq ($(shell pkg-config --exists lv2 lv2core lv2-plugin || echo no), no)
+ifeq ($(shell pkg-config --exists lv2 || echo no), no)
   $(error "LV2 SDK was not found")
 else
-  LV2FLAGS=`pkg-config --cflags --libs lv2 lv2core lv2-plugin`
+  LV2FLAGS=`pkg-config --cflags --libs lv2`
 endif
 
 ifeq ($(shell pkg-config --exists lv2-gui || echo no), no)
   $(error "LV2-GUI is required ")
 else
-  LV2GUIFLAGS=`pkg-config --cflags --libs lv2-gui lv2 lv2core lv2-plugin`
+  LV2GUIFLAGS=`pkg-config --cflags --libs lv2-gui lv2`
 endif
 
 
