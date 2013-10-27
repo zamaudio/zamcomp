@@ -1,3 +1,21 @@
+/* zamcompx2.c  ZamCompX2 stereo compressor
+ * Copyright (C) 2013  Damien Zammit
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 #include <math.h>
 #include <stdlib.h>
 
@@ -119,7 +137,6 @@ connect_port(LV2_Handle instance,
 		zamcomp->stereolink = (float*)data;
 	break;
 	}
-  
 }
 
 // Works on little-endian machines only
@@ -149,12 +166,10 @@ to_dB(float g) {
 	return (20.f*log10(g));
 }
 
-
 static void
 activate(LV2_Handle instance)
 {
 }
-
 
 static void
 run(LV2_Handle instance, uint32_t n_samples)
@@ -263,7 +278,6 @@ run(LV2_Handle instance, uint32_t n_samples)
 		zamcomp->oldR_y1 = Ry1;
 		}
 }
-
 
 static void
 deactivate(LV2_Handle instance)
