@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-PREFIX ?= /usr/local
+PREFIX ?= /usr
 LIBDIR ?= lib
 LV2DIR ?= $(PREFIX)/$(LIBDIR)/lv2
 
@@ -32,13 +32,6 @@ else
   LV2FLAGS=`pkg-config --cflags --libs lv2`
 endif
 
-ifeq ($(shell pkg-config --exists lv2-gui || echo no), no)
-  $(error "LV2-GUI is required ")
-else
-  LV2GUIFLAGS=`pkg-config --cflags --libs lv2-gui lv2`
-endif
-
-
 $(BUNDLE): manifest.ttl zamcomp.ttl zamcomp$(LIB_EXT)
 	rm -rf $(BUNDLE)
 	mkdir $(BUNDLE)
@@ -50,9 +43,6 @@ zamcomp$(LIB_EXT): zamcomp.c
 		zamcomp.c \
 		$(LV2FLAGS) $(LDFLAGS)
 
-zamcomp.peg: zamcomp.ttl
-	lv2peg zamcomp.ttl zamcomp.peg
-
 install: $(BUNDLE)
 	install -d $(DESTDIR)$(LV2DIR)/$(BUNDLE)
 	install -t $(DESTDIR)$(LV2DIR)/$(BUNDLE) $(BUNDLE)/*
@@ -61,6 +51,6 @@ uninstall:
 	rm -rf $(DESTDIR)$(LV2DIR)/$(BUNDLE)
 
 clean:
-	rm -rf $(BUNDLE) zamcomp$(LIB_EXT) zamcomp_gui$(LIB_EXT) zamcomp.peg
+	rm -rf $(BUNDLE) zamcomp$(LIB_EXT)
 
 .PHONY: clean install uninstall
