@@ -82,12 +82,11 @@ static void calceqcurve(ZamComp_UI* ui, float x[], float y[])
 	float width=((knee+1.f)-0.99f)*6.f;
 
 	float xg, yg;
-	float max_x = 8.f;
-	float min_x = -60.f;
+	float max_x = 0.f;
+	float min_x = -90.f;
 
 	for (int i = 0; i < COMPOINTS; ++i) {
-		float xx,x2;
-		xx = i;
+		float x2;
 		x2 = (max_x - min_x) / COMPOINTS * i + min_x;
 		yg = 0.f;
 		xg = (x2==0.f) ? -160.f : to_dB(fabs(x2));
@@ -102,7 +101,7 @@ static void calceqcurve(ZamComp_UI* ui, float x[], float y[])
 		}
 
 		yg = sanitize_denormal(yg);
-		y[i] = from_dB(yg);
+		y[i] = from_dB(yg) + from_dB(makeup)/9. - from_dB(0.f)/9.f;
 		x[i] = from_dB(xg);
 	}
 }
