@@ -10,7 +10,7 @@
 
 #include "lv2/lv2plug.in/ns/extensions/ui/ui.h"
 
-#define EQPOINTS 1500
+#define COMPOINTS 1500
 
 #define LOGO_W (160.)
 #define LOGO_H (30.)
@@ -45,8 +45,8 @@ typedef struct {
 	cairo_surface_t *frontface;
 	cairo_surface_t *compcurve;
 	
-	float compx[EQPOINTS];
-	float compy[EQPOINTS];
+	float compx[COMPOINTS];
+	float compy[COMPOINTS];
 	float knobs[6];
 
 	bool disable_signals;
@@ -74,7 +74,36 @@ sanitize_denormal(double value) {
 
 static void calceqcurve(ZamComp_UI* ui, float x[], float y[])
 {
-	for (uint32_t i = 0; i < EQPOINTS; ++i) {
+
+	float knee = ui->knobs[2];
+	float ratio = ui->knobs[3];
+	float makeup = ui->knobs[4];
+	float thresdb = ui->knobs[5];
+	float width=((knee+1.f)-0.99f)*6.f;
+
+	float xg, yg;
+	float max_x = 8.f;
+	float min_x = -60.f;
+
+	for (int i = 0; i < COMPOINTS; ++i) {
+		float xx,x2;
+		xx = i;
+		x2 = (max_x - min_x) / COMPOINTS * i + min_x;
+		yg = 0.f;
+		xg = (x2==0.f) ? -160.f : to_dB(fabs(x2));
+		xg = sanitize_denormal(xg);
+
+		if (2.f*(xg-thresdb)<-width) {
+			yg = xg;
+		} else if (2.f*fabs(xg-thresdb)<=width) {
+			yg = xg + (1.f/ratio-1.f)*(xg-thresdb+width/2.f)*(xg-thresdb+width/2.f)/(2.f*width);
+		} else if (2.f*(xg-thresdb)>width) {
+			yg = thresdb + (xg-thresdb)/ratio;
+		}
+
+		yg = sanitize_denormal(yg);
+		y[i] = from_dB(yg);
+		x[i] = from_dB(xg);
 	}
 }
 
@@ -120,7 +149,7 @@ static bool cb_set_knobs (RobWidget* handle, void *data) {
 	ui->write(ui->controller, ZAMCOMP_THRESH, sizeof(float), 0, (const void*) &ui->knobs[5]);
 
 	calceqcurve(ui, ui->compx, ui->compy);
-	robtk_xydraw_set_points(ui->xyp, EQPOINTS, ui->compx, ui->compy);
+	robtk_xydraw_set_points(ui->xyp, COMPOINTS, ui->compx, ui->compy);
 	return TRUE;
 }
 
@@ -145,14 +174,14 @@ static void render_frontface(ZamComp_UI* ui) {
 	robtk_xydraw_set_surface(ui->xyp, ui->compcurve);
 	
 	calceqcurve(ui, ui->compx, ui->compy);
-	robtk_xydraw_set_points(ui->xyp, EQPOINTS, ui->compx, ui->compy);
+	robtk_xydraw_set_points(ui->xyp, COMPOINTS, ui->compx, ui->compy);
 
 	cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.8);
 	const double dash[] = {1.5};
 	cairo_set_line_width(cr, 1.5);
 	cairo_set_dash(cr, dash, 1, 0);
-	cairo_move_to(cr, 0, PLOT_H/2.);
-	cairo_line_to(cr, PLOT_W, PLOT_H/2.);
+	//cairo_move_to(cr, 0, PLOT_H/2.);
+	//cairo_line_to(cr, PLOT_W, PLOT_H/2.);
 	cairo_stroke(cr);
 	// XXX Doesn't print graph since knob values are NaN.. why?
 }
@@ -180,7 +209,7 @@ static RobWidget * toplevel(ZamComp_UI* ui, void * const top)
 
 	ui->knob_att      = robtk_spin_new(0.2, 80, 0.1);
 	ui->knob_rel      = robtk_spin_new(2, 500, 1);
-	ui->knob_knee     = robtk_spin_new(0, 30, 0.5);
+	ui->knob_knee     = robtk_spin_new(0, 9, 0.1);
 	ui->knob_ratio    = robtk_spin_new(1.0, 20, 0.1);
 	ui->knob_makeup   = robtk_spin_new(0, 30, 0.5);
 	ui->slider_thresh = robtk_scale_new(-60, 0, 0.5, false);
