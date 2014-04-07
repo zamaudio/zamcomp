@@ -5,12 +5,18 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
 @prefix pg: <http://lv2plug.in/ns/ext/port-groups#>.
 @prefix ue: <http://lv2plug.in/ns/extensions/units#>.
+@prefix ui:   <http://lv2plug.in/ns/extensions/ui#>.
+
+<http://zamaudio.com/lv2/zamcomp#ui_gtk>
+	a ui:GtkUI;
+	ui:binary <zamcompUI_gtk.so>.
 
 <http://zamaudio.com/lv2/zamcomp>
 	a lv2:Plugin;
 	a lv2:CompressorPlugin;
 
 	lv2:binary <zamcomp.so>;
+	ui:ui <http://zamaudio.com/lv2/zamcomp#ui_gtk>;
 	doap:name "ZamComp";
 	doap:maintainer [
 		foaf:name "Damien Zammit";

@@ -23,21 +23,7 @@
 
 #define ZAMCOMP_URI "http://zamaudio.com/lv2/zamcomp"
 
-
-typedef enum {
-	ZAMCOMP_INPUT = 0,
-	ZAMCOMP_OUTPUT = 1,
-
-	ZAMCOMP_ATTACK = 2,
-	ZAMCOMP_RELEASE = 3,
-	ZAMCOMP_KNEE = 4,
-	ZAMCOMP_RATIO = 5,
-	ZAMCOMP_THRESHOLD = 6,
-	ZAMCOMP_MAKEUP = 7,
-  
-	ZAMCOMP_GAINR = 8
-} PortIndex;
-
+#include "zamcomp.h"
 
 typedef struct {
 	float* input;
@@ -97,7 +83,7 @@ connect_port(LV2_Handle instance,
 	case ZAMCOMP_RATIO:
 		zamcomp->ratio = (float*)data;
 	break;
-	case ZAMCOMP_THRESHOLD:
+	case ZAMCOMP_THRESH:
 		zamcomp->threshold = (float*)data;
 	break;
 	case ZAMCOMP_MAKEUP:
@@ -110,27 +96,17 @@ connect_port(LV2_Handle instance,
   
 }
 
-// Works on little-endian machines only
-static inline bool
-is_nan(float& value ) {
-	if (((*(uint32_t *) &value) & 0x7fffffff) > 0x7f800000) {
-		return true;
-	}
-return false;
-}
-
-// Force already-denormal float value to zero
-static inline void
-sanitize_denormal(float& value) {
-	if (is_nan(value)) {
-		value = 0.f;
-	}
+static inline float
+sanitize_denormal(float v) {
+	if(!isnormal(v))
+		return 0.f;
+	return v;
 }
 
 static inline float
 from_dB(float gdb) {
 	return (exp(gdb/20.f*log(10.f)));
-};
+}
 
 static inline float
 to_dB(float g) {
@@ -172,7 +148,7 @@ run(LV2_Handle instance, uint32_t n_samples)
 	for (uint32_t i = 0; i < n_samples; ++i) {
 		yg=0.f;
 		xg = (input[i]==0.f) ? -160.f : to_dB(fabs(input[i]));
-		sanitize_denormal(xg);
+		xg = sanitize_denormal(xg);
     
     
 		if (2.f*(xg-thresdb)<-width) {
@@ -183,16 +159,16 @@ run(LV2_Handle instance, uint32_t n_samples)
 			yg = thresdb + (xg-thresdb)/ratio;
 		}
     
-		sanitize_denormal(yg);
+		yg = sanitize_denormal(yg);
     
 		xl = xg - yg;
-		sanitize_denormal(zamcomp->old_y1);
-		sanitize_denormal(zamcomp->old_yl);
+		zamcomp->old_y1 = sanitize_denormal(zamcomp->old_y1);
+		zamcomp->old_yl = sanitize_denormal(zamcomp->old_yl);
     
 		y1 = fmaxf(xl, release_coeff * zamcomp->old_y1+(1.f-release_coeff)*xl);
 		yl = attack_coeff * zamcomp->old_yl+(1.f-attack_coeff)*y1;
-		sanitize_denormal(y1);
-		sanitize_denormal(yl);
+		y1 = sanitize_denormal(y1);
+		yl = sanitize_denormal(yl);
     
 		cdb = -yl;
 		gain = from_dB(cdb);

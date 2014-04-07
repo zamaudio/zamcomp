@@ -1,0 +1,18 @@
+#ifndef ZAMCOMP_H
+#define ZAMCOMP_H
+
+typedef enum {
+	ZAMCOMP_INPUT = 0,
+	ZAMCOMP_OUTPUT = 1,
+
+	ZAMCOMP_ATTACK = 2,
+	ZAMCOMP_RELEASE = 3,
+	ZAMCOMP_KNEE = 4,
+	ZAMCOMP_RATIO = 5,
+	ZAMCOMP_THRESH = 6,
+	ZAMCOMP_MAKEUP = 7,
+  
+	ZAMCOMP_GAINR = 8
+} PortIndex;
+
+#endif

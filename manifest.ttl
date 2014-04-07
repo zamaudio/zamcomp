@@ -4,3 +4,8 @@
 <http://zamaudio.com/lv2/zamcomp>
   a lv2:Plugin;
   rdfs:seeAlso <zamcomp.ttl>.
+
+<http://zamaudio.com/lv2/zamcomp#ui_gtk>
+  a ui:GtkUI;
+  ui:binary <zamcompUI_gtk.so>;
+  rdfs:seeAlso <zamcomp.ttl>.
