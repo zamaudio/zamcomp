@@ -112,44 +112,40 @@ calceqcurve(ZamComp_UI* ui, float x[], float y[]) {
 		x2 = (max_x - min_x) / COMPOINTS * i + min_x;
 		compcurve(ui, x2, &x[i], &y[i]);
 	}
-	compcurve(ui, from_dB(-ui->gainred), &ui->dotx[0], &ui->doty[0]);
-	//ui->dotx[0] = -ui->dotx[0]*28.+250.;// * PLOT_W; //+ PLOT_W;
-        //ui->doty[0] = ui->doty[0]*28.;// * PLOT_H; //+ PLOT_H; 
+	//float makeup = ui->knobs[4];
+
+	//dot follows curve:
+	//compcurve(ui, from_dB(-ui->gainred), &ui->dotx[0], &ui->doty[0]);
+	//ui->dotx[0] = -(1-ui->dotx[0])*280. + 280.;
+        //ui->doty[0] = (1.-ui->doty[0])*280.; 
+	
+	//dot follows centre:
+	ui->dotx[0] = -(1.- from_dB(-ui->gainred))*280. + 280.;
+        ui->doty[0] = (1.- from_dB(-ui->gainred))*280.; 
+
 	//printf("gainr=%.2f x=%.2f y=%.2f\n",ui->gainred, ui->dotx[0], ui->doty[0]);
 }
 
 #include "gui/img/logo.c"
 
-static bool expose_event(RobWidget* handle, cairo_t* cr, cairo_rectangle_t *ev)
-{
-	ZamComp_UI* ui = (ZamComp_UI*) GET_HANDLE(handle);
-
-	/* limit cairo-drawing to exposed area */
-	cairo_rectangle (cr, ev->x, ev->y, ev->width, ev->height);
-	cairo_clip(cr);
-	cairo_set_source_surface(cr, ui->frontface, 0, 0);
-	cairo_paint (cr);
-
-	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-
-	return TRUE;
-}
-
 static void xy_clip_fn(cairo_t *cr, void *data)
 {
+//	ZamComp_UI* ui = (ZamComp_UI*) data;
+
 	rounded_rectangle(cr, 10, 10, PLOT_W-20, PLOT_H-20, 10);
 	cairo_clip(cr);
-}
 /*
         cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
         cairo_set_line_width (cr, 10.);
         cairo_set_source_rgba(cr, 0.0, 1.0, 0.0, 1.0);
 
-        cairo_move_to(cr, ui->dotx[1], ui->doty[1]);
-        cairo_move_to(cr, ui->dotx[1], ui->doty[1]+0.5);
+        cairo_move_to(cr, ui->dotx[0], ui->doty[0]);
+        cairo_move_to(cr, ui->dotx[0], ui->doty[0]+0.5);
         cairo_close_path(cr);
 	cairo_stroke(cr);
 */
+}
+
 static bool cb_set_knobs (RobWidget* handle, void *data) {
 	ZamComp_UI* ui = (ZamComp_UI*) (data);
 	// continue polling until all signals read
@@ -172,9 +168,6 @@ static bool cb_set_knobs (RobWidget* handle, void *data) {
 	robtk_xydraw_set_linewidth(ui->xyp, 2.5);
 	robtk_xydraw_set_color(ui->xyp, 1.0, .2, .0, 1.0);
 	robtk_xydraw_set_points(ui->xyp, COMPOINTS, ui->compx, ui->compy);
-	//robtk_xydraw_set_linewidth(ui->xyp, 10.);
-	//robtk_xydraw_set_color(ui->xyp, 0.0, 1.0, 0.0, 1.0);
-	//robtk_xydraw_set_points(ui->xyp, 2, ui->dotx, ui->doty);
 	return TRUE;
 }
 
@@ -202,9 +195,6 @@ static void render_frontface(ZamComp_UI* ui) {
 	robtk_xydraw_set_linewidth(ui->xyp, 2.5);
 	robtk_xydraw_set_color(ui->xyp, 1.0, .2, .0, 1.0);
 	robtk_xydraw_set_points(ui->xyp, COMPOINTS, ui->compx, ui->compy);
-	//robtk_xydraw_set_linewidth(ui->xyp, 10.);
-	//robtk_xydraw_set_color(ui->xyp, 0.0, 1.0, 0.0, 1.0);
-	//robtk_xydraw_set_points(ui->xyp, 2, ui->dotx, ui->doty);
 
 	cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.8);
 	const double dash[] = {1.5};
@@ -213,8 +203,6 @@ static void render_frontface(ZamComp_UI* ui) {
 	cairo_move_to(cr, 0, PLOT_H);
 	cairo_line_to(cr, PLOT_W, 0);
         cairo_stroke(cr);
-
-	// XXX Doesn't print graph since knob values are NaN.. why?
 }
 
 static void ui_disable(LV2UI_Handle handle)
@@ -231,7 +219,8 @@ static RobWidget * toplevel(ZamComp_UI* ui, void * const top)
         ui->frontface = NULL;
 	ui->hbox = rob_hbox_new(FALSE, 2);
         robwidget_make_toplevel(ui->hbox, top);
-        ROBWIDGET_SETNAME(ui->hbox, "ZamComp");
+	
+	ROBWIDGET_SETNAME(ui->hbox, "ZamComp");
 
         ui->ctable = rob_table_new(/*rows*/6, /*cols*/ 5, FALSE);
 	ui->sep[0] = robtk_sep_new(TRUE);
@@ -251,8 +240,6 @@ static RobWidget * toplevel(ZamComp_UI* ui, void * const top)
 	ui->lbl_ratio  = robtk_lbl_new("RAT");
 	ui->lbl_makeup = robtk_lbl_new("MAK");
 	ui->lbl_thresh = robtk_lbl_new("THR");
-
-	//ui->darea = robtk_darea_new(PLOT_W,PLOT_H, &expose_plot, ui);
 
 	ui->xyp = robtk_xydraw_new(PLOT_W, PLOT_H);
 	robtk_xydraw_set_alignment(ui->xyp, 0, 0);
