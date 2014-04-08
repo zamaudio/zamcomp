@@ -48,6 +48,11 @@ typedef struct {
 	float compx[COMPOINTS];
 	float compy[COMPOINTS];
 	float knobs[6];
+	float dotx[2];
+	float doty[2];
+	
+	float gainred;
+	float sample;
 
 	bool disable_signals;
 	bool first;
@@ -72,39 +77,45 @@ sanitize_denormal(double value) {
 	return value;
 }
 
-static void calceqcurve(ZamComp_UI* ui, float x[], float y[])
-{
-
+static void
+compcurve(ZamComp_UI* ui, float in, float *outx, float* outy) {
 	float knee = ui->knobs[2];
 	float ratio = ui->knobs[3];
 	float makeup = ui->knobs[4];
 	float thresdb = ui->knobs[5];
 	float width=((knee+1.f)-0.99f)*6.f;
-
 	float xg, yg;
+	
+	yg = 0.f;
+	xg = (in==0.f) ? -160.f : to_dB(fabs(in));
+	xg = sanitize_denormal(xg);
+
+	if (2.f*(xg-thresdb)<-width) {
+		yg = xg;
+	} else if (2.f*fabs(xg-thresdb)<=width) {
+		yg = xg + (1.f/ratio-1.f)*(xg-thresdb+width/2.f)*(xg-thresdb+width/2.f)/(2.f*width);
+	} else if (2.f*(xg-thresdb)>width) {
+		yg = thresdb + (xg-thresdb)/ratio;
+	}
+	yg = sanitize_denormal(yg);
+
+	*outy = (yg + makeup + 1.) / 50. + 1.;
+	*outx = (to_dB(in) + 1.) / 50. + 1.;
+}
+
+static void
+calceqcurve(ZamComp_UI* ui, float x[], float y[]) {
 	float max_x = 1.f;
 	float min_x = 0.f;
-
+	float x2;
 	for (int i = 0; i < COMPOINTS; ++i) {
-		float x2;
 		x2 = (max_x - min_x) / COMPOINTS * i + min_x;
-		yg = 0.f;
-		xg = (x2==0.f) ? -160.f : to_dB(fabs(x2));
-		xg = sanitize_denormal(xg);
-
-		if (2.f*(xg-thresdb)<-width) {
-			yg = xg;
-		} else if (2.f*fabs(xg-thresdb)<=width) {
-			yg = xg + (1.f/ratio-1.f)*(xg-thresdb+width/2.f)*(xg-thresdb+width/2.f)/(2.f*width);
-		} else if (2.f*(xg-thresdb)>width) {
-			yg = thresdb + (xg-thresdb)/ratio;
-		}
-
-		yg = sanitize_denormal(yg);
-		y[i] = (yg + makeup + 1.) / 50. + 1.;
-		x[i] = (to_dB(x2) + 1.) / 50. + 1.;
-		//printf("x=%.2f y=%.2f\n",x[i],y[i]);
+		compcurve(ui, x2, &x[i], &y[i]);
 	}
+	compcurve(ui, from_dB(-ui->gainred), &ui->dotx[0], &ui->doty[0]);
+	//ui->dotx[0] = -ui->dotx[0]*28.+250.;// * PLOT_W; //+ PLOT_W;
+        //ui->doty[0] = ui->doty[0]*28.;// * PLOT_H; //+ PLOT_H; 
+	//printf("gainr=%.2f x=%.2f y=%.2f\n",ui->gainred, ui->dotx[0], ui->doty[0]);
 }
 
 #include "gui/img/logo.c"
@@ -129,7 +140,16 @@ static void xy_clip_fn(cairo_t *cr, void *data)
 	rounded_rectangle(cr, 10, 10, PLOT_W-20, PLOT_H-20, 10);
 	cairo_clip(cr);
 }
+/*
+        cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+        cairo_set_line_width (cr, 10.);
+        cairo_set_source_rgba(cr, 0.0, 1.0, 0.0, 1.0);
 
+        cairo_move_to(cr, ui->dotx[1], ui->doty[1]);
+        cairo_move_to(cr, ui->dotx[1], ui->doty[1]+0.5);
+        cairo_close_path(cr);
+	cairo_stroke(cr);
+*/
 static bool cb_set_knobs (RobWidget* handle, void *data) {
 	ZamComp_UI* ui = (ZamComp_UI*) (data);
 	// continue polling until all signals read
@@ -149,7 +169,12 @@ static bool cb_set_knobs (RobWidget* handle, void *data) {
 	ui->write(ui->controller, ZAMCOMP_THRESH, sizeof(float), 0, (const void*) &ui->knobs[5]);
 
 	calceqcurve(ui, ui->compx, ui->compy);
+	robtk_xydraw_set_linewidth(ui->xyp, 2.5);
+	robtk_xydraw_set_color(ui->xyp, 1.0, .2, .0, 1.0);
 	robtk_xydraw_set_points(ui->xyp, COMPOINTS, ui->compx, ui->compy);
+	//robtk_xydraw_set_linewidth(ui->xyp, 10.);
+	//robtk_xydraw_set_color(ui->xyp, 0.0, 1.0, 0.0, 1.0);
+	//robtk_xydraw_set_points(ui->xyp, 2, ui->dotx, ui->doty);
 	return TRUE;
 }
 
@@ -174,15 +199,21 @@ static void render_frontface(ZamComp_UI* ui) {
 	robtk_xydraw_set_surface(ui->xyp, ui->compcurve);
 	
 	calceqcurve(ui, ui->compx, ui->compy);
+	robtk_xydraw_set_linewidth(ui->xyp, 2.5);
+	robtk_xydraw_set_color(ui->xyp, 1.0, .2, .0, 1.0);
 	robtk_xydraw_set_points(ui->xyp, COMPOINTS, ui->compx, ui->compy);
+	//robtk_xydraw_set_linewidth(ui->xyp, 10.);
+	//robtk_xydraw_set_color(ui->xyp, 0.0, 1.0, 0.0, 1.0);
+	//robtk_xydraw_set_points(ui->xyp, 2, ui->dotx, ui->doty);
 
 	cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.8);
 	const double dash[] = {1.5};
 	cairo_set_line_width(cr, 1.5);
 	cairo_set_dash(cr, dash, 1, 0);
-	//cairo_move_to(cr, 0, PLOT_H/2.);
-	//cairo_line_to(cr, PLOT_W, PLOT_H/2.);
-	cairo_stroke(cr);
+	cairo_move_to(cr, 0, PLOT_H);
+	cairo_line_to(cr, PLOT_W, 0);
+        cairo_stroke(cr);
+
 	// XXX Doesn't print graph since knob values are NaN.. why?
 }
 
@@ -385,6 +416,11 @@ port_event(LV2UI_Handle handle,
 	if (format != 0) return;
 	const float v = *(float *)buffer;
 	switch (port_index) {
+		case ZAMCOMP_GAINR:
+			ui->disable_signals = true;
+			ui->gainred = v;
+			ui->disable_signals = false;
+			break;
 		case ZAMCOMP_ATTACK:
 			ui->disable_signals = true;
 			robtk_spin_set_value(ui->knob_att, v);
